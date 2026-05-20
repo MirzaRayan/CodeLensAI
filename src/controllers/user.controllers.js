@@ -249,4 +249,31 @@ const changePassword = async (req, res) => {
     }
 }
 
-export { registerUser, loginUser, getLoggedInUser, logoutUser, updateUser, changePassword };
+
+const deleteAccount = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if(!user) {
+            return res.status(404).json({
+                message: "User not found"
+            })
+        }
+
+        await User.findByIdAndDelete(user._id);
+
+        return res.status(200)
+        .clearCookie("accessToken", options)
+        .json({
+            message: "Account deleted successfully"
+        })
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: 'Server Error while deleting account',
+            error: error.message
+        })
+    }
+}
+
+export { registerUser, loginUser, getLoggedInUser, logoutUser, updateUser, changePassword, deleteAccount };
