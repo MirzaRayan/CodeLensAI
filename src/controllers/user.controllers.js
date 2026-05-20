@@ -197,4 +197,56 @@ const updateUser = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser, getLoggedInUser, logoutUser, updateUser };
+
+const changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+
+        if(oldPassword === newPassword) {
+            return res.status(400).json({
+                message: "New password cannot be same as old password"
+            })
+        }
+
+        if(!newPassword || !oldPassword) {
+            return res.status(400).json({
+                message: "All fields are required"
+            })
+        }
+
+            const user = await User.findById(req.user._id);
+    
+            if(!user) {
+                return res.status(404).json({
+                    message: "User not found"
+                })
+            }
+    
+            const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+    
+            if(!isPasswordCorrect) {
+                return res.status(400).json({
+                    message: "Incorrect old password"
+                })
+            }
+    
+            user.password = newPassword;
+    
+            await user.save();
+    
+            return res.status(200)
+            .clearCookie("accessToken", options)
+            .json({
+                message: "Password changed successfully"
+            })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: 'Server Error while changing password',
+            error: error.message
+        })
+    }
+}
+
+export { registerUser, loginUser, getLoggedInUser, logoutUser, updateUser, changePassword };
