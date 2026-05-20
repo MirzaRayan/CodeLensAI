@@ -1,6 +1,25 @@
 import { User } from "../models/User.models.js";
 
 
+
+const methodForGeneratingAccessToken = async (userId) => {
+    try {
+        const user = await User.findById(userId)
+
+        const accessToken = user.generateAccessToken()
+
+        return accessToken
+    } catch (error) {
+        console.log('Error generating access token', error);
+    }
+}
+
+const options = {
+    httpOnly: true,
+    secure: false,
+}
+
+
 const registerUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -38,7 +57,59 @@ const registerUser = async (req, res) => {
     } catch (error) {
         console.log(error);
         return res.status(500).json({
-            message: 'Internal Server Error',
+            message: 'Server Error while registering user',
+            error: error.message
+        })
+    }
+}
+
+
+const loginUser = async (req, res) => {
+    try {
+        const {email, password} = req.body;
+
+        if(!email || !password) {
+            return res.status(400).json({
+                message: 'All fields are required'
+            })
+        }
+
+        const user = await User.findOne({
+            email
+        })
+
+        if(!user) {
+            return res.status(404).json({
+                message: 'User not found with this email'
+            })
+        }
+
+        const isPasswordCorrect = await user.isPasswordCorrect(password)
+
+        if(!isPasswordCorrect) {
+            return res.status(400).json({
+                message: 'Incorrect password'
+            })
+        }
+
+
+        const accessToken = await methodForGeneratingAccessToken(user._id)
+
+        const loggedInUser = await User.findById(user._id).select('-password')
+
+        return res.status(200)
+        .cookie('accessToken', accessToken, options)
+        .json({
+            message: 'User logged in successfully',
+            data: loggedInUser,
+            accessToken
+        })
+
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: 'Server Error while logging in User',
             error: error.message
         })
     }
@@ -47,5 +118,6 @@ const registerUser = async (req, res) => {
 
 
 export {
-    registerUser
+    registerUser,
+    loginUser
 }
