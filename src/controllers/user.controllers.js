@@ -116,6 +116,29 @@ const loginUser = async (req, res) => {
 }
 
 
+const getLoggedInUser = async (req, res) => {
+    try {
+        const loggedInUser = await User.findById(req.user._id).select('-password')
+
+        if(!loggedInUser) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+        
+        return res.status(200).json({
+            message: 'loggedIn user fetched successfully',
+            data: loggedInUser
+        })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: 'Server Error while fetching logged in user',
+            error: error.message
+        })
+    }
+}
  
 
 
@@ -124,5 +147,6 @@ const loginUser = async (req, res) => {
 
 export {
     registerUser,
-    loginUser
+    loginUser,
+    getLoggedInUser
 }
