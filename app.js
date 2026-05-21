@@ -17,8 +17,13 @@ app.use(cookieParser())
 
 import UserRouter from './src/routes/user.routes.js'
 
-
 app.use('/api/v1/users', UserRouter)
+
+
+
+import ReviewRouter from './src/routes/review.routes.js'
+
+app.use('/api/v1/reviews', ReviewRouter)
 
 
 export default app
