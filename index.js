@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config({
     path: './.env'
 })
+
 import app from "./app.js";
 import { DB_Connection } from "./src/db/index.js";
 
