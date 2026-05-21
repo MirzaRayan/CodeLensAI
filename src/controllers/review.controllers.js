@@ -175,11 +175,40 @@ const getAllReviews = async (req, res) => {
 }
 
 
+const getSingleReview = async (req, res) => {
+    try {
 
+        const singleReview = await Review.findById(req.params.id)
+
+        if(!singleReview) {
+            return res.status(404).json({
+                message: 'review not found'
+            })
+        }
+
+        if(singleReview.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: 'You cannot get reviews of other users'
+            })
+        }
+
+        return res.status(200).json({
+            message: 'single review fetched successfully',
+            data: singleReview
+        })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            message: 'Server error while fetching review',
+        })
+    }
+}
 
 
 
 export {
     reviewCode,
-    getAllReviews
+    getAllReviews,
+    getSingleReview
 }
