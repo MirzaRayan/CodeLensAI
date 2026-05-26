@@ -33,49 +33,47 @@ const reviewCode = async (req, res) => {
       });
     }
 
-    // prompt for AI review
-    const prompt = `
-    You are an expert code reviewer.
-    Review this ${language} code.
-    
-    CRITICAL RULES:
-    1. Return ONLY raw JSON nothing else
-    2. NO extra text before or after JSON
-    3. NO markdown backticks or code blocks
-    4. NO explanations or descriptions
-    5. JUST the JSON object nothing else
-    6. ALL arrays must contain ONLY plain strings
-    7. NO objects inside arrays
-    8. NO {message: "..."} format
-    9. NO {code: "...", message: "..."} format
-    10. Only plain strings like ["string here"]
-    11. Do NOT suggest renaming valid variables
-    12. Only report REAL bugs and issues
-    13. If no issues found return empty array []
-    14. score must be a number between 0 and 10
-    15. improvedCode must be a plain string
-    
-    Return EXACTLY in this format with no deviation:
-    {
-        "bugs": ["plain string only"],
-        "security": ["plain string only"],
-        "performance": ["plain string only"],
-        "bestPractices": ["plain string only"],
-        "score": 7,
-        "improvedCode": "improved code here as plain string"
-    }
-    
-    Code to review:
-    ${code}
-    `;
-
-    // calling groq api
     const response = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
       messages: [
         {
+          role: "system",
+          content: `You are a code reviewer. 
+        You only respond with raw JSON. 
+        Never include instructions or rules in your response.
+        Only return the JSON object.
+        
+        IMPORTANT:
+        - Do NOT suggest renaming variables that are already clear
+        - Do NOT flag simple working code as having issues
+        - Only report REAL bugs like syntax errors or crashes
+        - Only report REAL security vulnerabilities
+        - bestPractices should be empty array for simple correct code
+        - A simple console.log or variable declaration has NO best practice issues`,
+        },
+        {
           role: "user",
-          content: prompt,
+          content: `Review this ${language} code and return ONLY a JSON object:
+        
+        ${code}
+        
+        JSON format:
+        {
+          "bugs": [],
+          "security": [],
+          "performance": [],
+          "bestPractices": [],
+          "score": 0,
+          "improvedCode": ""
+        }
+        
+        Rules:
+        - Plain strings only in arrays
+        - Empty array if nothing found
+        - Simple correct code gets score 8 or above
+        - Do NOT suggest renaming valid clear variables
+        - Do NOT add best practices for simple working code
+        - Only flag CRITICAL issues not style preferences`,
         },
       ],
       temperature: 0.1,
@@ -90,18 +88,17 @@ const reviewCode = async (req, res) => {
       .replace(/```/g, "")
       .trim();
 
-    const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/)
+    const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
 
-    if(!jsonMatch) {
-        return res.status(500).json({
-            message: 'AI returned invalid response please try again'
-        })
+    if (!jsonMatch) {
+      return res.status(500).json({
+        message: "AI returned invalid response please try again",
+      });
     }
 
     // extracting JSON from cleaned response
-    
-    const parsedReview = JSON.parse(jsonMatch[0])
 
+    const parsedReview = JSON.parse(jsonMatch[0]);
 
     // saving review to database
     const newReview = await Review.create({
