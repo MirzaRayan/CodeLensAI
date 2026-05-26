@@ -197,7 +197,6 @@ const updateUser = async (req, res) => {
   }
 };
 
-
 const changePassword = async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
